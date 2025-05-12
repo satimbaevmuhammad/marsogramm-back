@@ -1,8 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
-dotenv.config();
 
 const authRoutes = require('./routes/auth');
 
@@ -12,11 +10,15 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 
-mongoose.connect(process.env.MONGO_URI)
+// Atrof-muhit o'zgaruvchilarsiz yoziladi
+const PORT = 5000;
+const MONGO_URI = 'mongodb+srv://satimbaevmuhammad527:kRaeyoLNxTpyHO4V@cluster0.yv6d2th.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('MongoDB ulandi');
-    app.listen(process.env.PORT, () => {
-      console.log(`Server ${process.env.PORT}-portda ishga tushdi`);
+    app.listen(PORT, () => {
+      console.log(`Server ${PORT}-portda ishga tushdi`);
     });
   })
   .catch(err => console.log(err));
