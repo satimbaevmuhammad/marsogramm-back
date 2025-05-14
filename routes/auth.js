@@ -1,43 +1,49 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const sendCode = require('../sendCode');
 
-// REGISTER
-router.post('/register', async (req, res) => {
-    const { username, password } = req.body;
+// Send verification code to email
+router.post('/send-code', async (req, res) => {
+    const { username } = req.body;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    try {
-        const existing = await User.findOne({ username });
-        if (existing) return res.status(400).json({ message: 'Username band' });
+    let user = await User.findOne({ username });
 
-        const hashed = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, password: hashed });
-        await newUser.save();
-
-        res.status(201).json({ message: 'Ro‘yxatdan o‘tdingiz' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (!user) {
+        user = new User({ username });
     }
+
+    user.verificationCode = code;
+    user.codeExpires = expires;
+    user.isVerified = false;
+
+    await user.save();
+    await sendCode(username, code);
+
+    res.json({ message: 'Kod emailingizga yuborildi' });
 });
 
-// LOGIN
-router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+// Verify the code
+router.post('/verify-code', async (req, res) => {
+    const { username, code } = req.body;
+    const user = await User.findOne({ username });
 
-    try {
-        const user = await User.findOne({ username });
-        if (!user) return res.status(400).json({ message: 'Foydalanuvchi topilmadi' });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(401).json({ message: 'Parol noto‘g‘ri' });
-
-        const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET);
-        res.json({ token, user: { id: user._id, username: user.username } });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (!user || user.verificationCode !== code) {
+        return res.status(400).json({ message: 'Noto‘g‘ri kod' });
     }
+
+    if (user.codeExpires < new Date()) {
+        return res.status(400).json({ message: 'Kod eskirgan' });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.codeExpires = null;
+    await user.save();
+
+    res.json({ message: 'Tizimga kirdingiz', user: { id: user._id, username: user.username } });
 });
 
 module.exports = router;
