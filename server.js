@@ -22,6 +22,9 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+// auth va upload'dan keyin qo‘shing
+app.use('/api/messages', require('./routes/message'));
+
 
 // MongoDB ulanishi
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
