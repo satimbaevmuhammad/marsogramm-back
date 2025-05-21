@@ -9,7 +9,6 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -44,8 +43,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_message', ({ senderId, receiverId, message }) => {
-    console.log(`Message: ${message} (from: ${senderId} to: ${receiverId})`);
-
+    console.log(`Message from ${senderId} to ${receiverId}: ${message}`);
     io.to(receiverId).emit('receive_message', {
       senderId,
       message,
